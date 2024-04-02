@@ -1,48 +1,40 @@
-<!doctype html>
-<html class="no-js" lang="">
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Chat Server</title>
-  <meta name="description" content="">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <meta property="og:title" content="">
-  <meta property="og:type" content="">
-  <meta property="og:url" content="">
-  <meta property="og:image" content="">
-
-  <link rel="manifest" href="site.webmanifest">
-  <link rel="apple-touch-icon" href="icon.png">
-  <!-- Place favicon.ico in the root directory -->
-
-  <link rel="stylesheet" href="css/normalize.css">
-  <link rel="stylesheet" href="css/style.css">
-
-  <meta name="theme-color" content="#fafafa">
+    <meta charset="UTF-8">
+    <title>Chat Server</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
+<div id="app">
+    <header id="app-header">
+        <h1>Chat Server</h1>
+    </header>
+    <main id="app-main">
+        <aside id="sidebar">
+            <h2>List of chat Rooms</h2>
+            <ul id="room-list">
+                <!-- Room list goes here -->
+            </ul>
+            <button id="create-room">Create And Join New Room</button>
+        </aside>
+        <section id="chat-section">
+            <header id="chat-header">
+                <h2 id="current-room">Select a room</h2>
+            </header>
+            <div id="chat-window">
+                <!-- Chat messages go here -->
+            </div>
+            <footer id="chat-input-container">
+                <label for="chat-input"></label><input type="text" id="chat-input" placeholder="Enter your message...">
+                <button id="send-message">Send</button>
+            </footer>
+        </section>
+    </main>
+</div>
 
-<!-- Add your site or application content here -->
-
-
-
-
-
-
-<script src="js/vendor/modernizr-3.11.2.min.js"></script>
-<script src="js/plugins.js"></script>
 <script src="js/main.js"></script>
-
-<!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
-<script>
-  window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
-  ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'anonymizeIp', true); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
-</script>
-<script src="https://www.google-analytics.com/analytics.js" async></script>
 </body>
-
 </html>
-
-
