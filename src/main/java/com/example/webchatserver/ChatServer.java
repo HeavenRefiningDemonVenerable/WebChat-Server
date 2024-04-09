@@ -16,18 +16,20 @@ import java.io.IOException;
 public class ChatServer {
 
     // contains a static List of ChatRoom used to control the existing rooms and their users
-
+    private Map<String, String> usernames = new HashMap<String, String>();
+    private static Map<String, String> roomList = new HashMap<String, String>();
     // you may add other attributes as you see fit
 
 
 
     @OnOpen
     public void open(@PathParam("roomID") String roomID, Session session) throws IOException, EncodeException {
-
+        roomList.put(session.getId(), roomID);
+        System.out.println("Room joined.");
         session.getBasicRemote().sendText("First sample message to the client");
 //        accessing the roomID parameter
         System.out.println(roomID);
-
+        session.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" \\n Welcome, please state your name.\"}");
 
 
     }
@@ -35,7 +37,15 @@ public class ChatServer {
     @OnClose
     public void close(Session session) throws IOException, EncodeException {
         String userId = session.getId();
-        // do things for when the connection closes
+        if(usernames.containsKey(userId)){
+            String username = usernames.get(userId);
+            String roomId = roomList.get(userId);
+            usernames.remove(userId);
+            roomList.remove(roomId);
+            for(Session peer: session.getOpenSessions()){
+                peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" (Server): " + username + " left the chat.\"}");
+            }
+        }
     }
 
     @OnMessage
