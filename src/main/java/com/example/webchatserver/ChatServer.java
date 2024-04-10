@@ -51,19 +51,23 @@ public class ChatServer {
         JSONObject jsonMsg = new JSONObject(message);
         String type = jsonMsg.getString("type");
 
-
         if ("join".equals(type)) {
             String username = jsonMsg.getString("username");
-            usernames.put(userId, username);
-            String joinMsg = String.format("{\"type\": \"chat\", \"user\": \"Server\", \"message\": \"%s has joined the chat.\", \"timestamp\": \"%s\"}", username, getCurrentTimestamp());
+            usernames.put(userId, username); // Save the username associated with user's session ID
+            String joinMsg = String.format("{\"type\": \"chat\", \"username\": \"Server\", \"message\": \"%s has joined the chat.\", \"timestamp\": \"%s\"}", username, getCurrentTimestamp());
             broadcastMessageToRoom(joinMsg, roomID);
         } else if ("chat".equals(type)) {
-            String username = usernames.get(userId);
             String chatMessage = jsonMsg.getString("message");
-            String chatMsg = String.format("{\"type\": \"chat\", \"user\": \"%s\", \"message\": \"%s\", \"timestamp\": \"%s\"}", username, chatMessage, getCurrentTimestamp());
+            // Retrieve username using the session ID, and use "Anonymous" if not found
+            String username = usernames.getOrDefault(userId, "Anonymous");
+            if (username == null || username.trim().isEmpty()) {
+                username = "Anonymous"; // Fallback in case the username is somehow not set
+            }
+            String chatMsg = String.format("{\"type\": \"chat\", \"username\": \"%s\", \"message\": \"%s\", \"timestamp\": \"%s\"}", username, chatMessage, getCurrentTimestamp());
             broadcastMessageToRoom(chatMsg, roomID);
         }
     }
+
 
 
 
