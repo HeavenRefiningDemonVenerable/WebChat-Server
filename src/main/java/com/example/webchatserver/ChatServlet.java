@@ -1,48 +1,63 @@
 package com.example.webchatserver;
 
-import java.io.*;
-import java.util.HashSet;
-import java.util.Set;
-
-import jakarta.servlet.http.*;
-import jakarta.servlet.annotation.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.RandomStringUtils;
 
-/**
- * This is a class that has services
- * In our case, we are using this to generate unique room IDs**/
-@WebServlet(name = "chatServlet", value = "/chat-servlet")
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.concurrent.ConcurrentHashMap;
+
+@WebServlet(name = "ChatServlet", urlPatterns = {"/chat-servlet"})
 public class ChatServlet extends HttpServlet {
-    private String message;
 
-    //static so this set is unique
-    public static Set<String> rooms = new HashSet<>();
+    private static final ConcurrentHashMap<String, String> rooms = new ConcurrentHashMap<>();
 
-
-
-    /**
-     * Method generates unique room codes
-     * **/
-    public String generatingRandomUpperAlphanumericString(int length) {
-        String generatedString = RandomStringUtils.randomAlphanumeric(length).toUpperCase();
-        // generating unique room code
-        while (rooms.contains(generatedString)){
+    public String generateUniqueRoomID(int length) {
+        String generatedString;
+        do {
             generatedString = RandomStringUtils.randomAlphanumeric(length).toUpperCase();
-        }
-        rooms.add(generatedString);
-
+        } while (rooms.containsKey(generatedString));
+        rooms.put(generatedString, "");
         return generatedString;
     }
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setContentType("text/plain");
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
 
-        // send the random code as the response's content
-        PrintWriter out = response.getWriter();
-        out.println(generatingRandomUpperAlphanumericString(5));
-
+        if ("create".equals(action)) {
+            createRoom(response);
+        } else if ("list".equals(action)) {
+            listRooms(response);
+        } else {
+            sendErrorResponse(response, "Invalid action.");
+        }
     }
 
+    private void createRoom(HttpServletResponse response) throws IOException {
+        String roomID = generateUniqueRoomID(5);
+        response.setContentType("text/plain");
+        response.getWriter().println(roomID);
+    }
+
+    private void listRooms(HttpServletResponse response) throws IOException {
+        response.setContentType("application/json");
+        PrintWriter out = response.getWriter();
+        out.println("{\"rooms\": \"" + String.join(", ", rooms.keySet()) + "\"}");
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, String errorMessage) throws IOException {
+        response.setContentType("text/plain");
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        PrintWriter out = response.getWriter();
+        out.println(errorMessage);
+    }
+
+    @Override
     public void destroy() {
     }
 }

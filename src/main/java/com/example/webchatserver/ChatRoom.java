@@ -1,26 +1,18 @@
 package com.example.webchatserver;
 
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-/**
- * This class represents the data you may need to store about a Chat room
- * You may add more method or attributes as needed
- * **/
 public class ChatRoom {
-    private String  code;
+    private String code;
+    private Map<String, UserDetail> users = new HashMap<>();
 
-    //each user has an unique ID associate to their ws session and their username
-    private Map<String, String> users = new HashMap<String, String>() ;
-
-    // when created the chat room has at least one user
-    public ChatRoom(String code, String user){
+    public ChatRoom(String code, String userSessionId){
         this.code = code;
-        // when created the user has not entered their username yet
-        this.users.put(user, "");
+        addUser(userSessionId, ""); // Initialize with an empty username, indicating they've not set it yet
     }
+
     public void setCode(String code) {
         this.code = code;
     }
@@ -29,34 +21,39 @@ public class ChatRoom {
         return code;
     }
 
-    public Map<String, String> getUsers() {
-        return users;
+    public Map<String, String> getUsernames() {
+        Map<String, String> usernames = new HashMap<>();
+        users.forEach((sessionId, userDetails) -> usernames.put(sessionId, userDetails.username));
+        return usernames;
     }
 
-    /**
-     * This method will add the new userID to the room if not exists, or it will add a new userID,name pair
-     * **/
     public void setUserName(String userID, String name) {
-        // update the name
-        if(users.containsKey(userID)){
-            users.remove(userID);
-            users.put(userID, name);
-        }else{ // add new user
-            users.put(userID, name);
+        if(users.containsKey(userID)) {
+            users.get(userID).username = name;
+        } else {
+            addUser(userID, name);
         }
     }
 
-    /**
-     * This method will remove a user from this room
-     * **/
     public void removeUser(String userID){
-        if(users.containsKey(userID)){
-            users.remove(userID);
-        }
-
+        users.remove(userID);
     }
 
     public boolean inRoom(String userID){
         return users.containsKey(userID);
+    }
+
+    private void addUser(String sessionId, String username) {
+        users.put(sessionId, new UserDetail(username, Instant.now()));
+    }
+
+    private static class UserDetail {
+        String username;
+        Instant lastActive;
+
+        UserDetail(String username, Instant lastActive) {
+            this.username = username;
+            this.lastActive = lastActive;
+        }
     }
 }
