@@ -1,92 +1,66 @@
 package com.example.webchatserver;
 
-
 import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Map; // Import for Map
+import java.util.HashMap; // Import for HashMap
 
-
-/**
- * This class represents a web socket server, a new connection is created and it receives a roomID as a parameter
- * **/
 @ServerEndpoint(value="/ws/{roomID}")
 public class ChatServer {
 
-    // contains a static List of ChatRoom used to control the existing rooms and their users
-    private Map<String, String> usernames = new HashMap<String, String>();
-    private static Map<String, String> roomList = new HashMap<String, String>();
-    // you may add other attributes as you see fit
-
-
+    private Map<String, String> usernames = new HashMap<>();
+    private static Map<String, String> roomList = new HashMap<>();
 
     @OnOpen
-    public void open(@PathParam("roomID") String roomID, Session session) throws IOException, EncodeException {
+    public void open(@PathParam("roomID") String roomID, Session session) throws IOException {
         roomList.put(session.getId(), roomID);
-        System.out.println("Room joined.");
-        session.getBasicRemote().sendText("First sample message to the client");
-//        accessing the roomID parameter
-        System.out.println(roomID);
-        session.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" \\n Welcome, please state your name.\"}");
-
-
+        System.out.println("Room joined: " + roomID);
+        session.getBasicRemote().sendText("Welcome, please state your name.");
     }
 
     @OnClose
-    public void close(Session session) throws IOException, EncodeException {
+    public void close(Session session) throws IOException {
         String userId = session.getId();
-        if(usernames.containsKey(userId)){
+        if (usernames.containsKey(userId)) {
             String username = usernames.get(userId);
-            String roomId = roomList.get(userId);
+            String roomId = roomList.get(userId); // Corrected the variable name to 'roomId' for consistency
             usernames.remove(userId);
-            roomList.remove(roomID);
-            for(Session peer: session.getOpenSessions()){
-                peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" (Server): " + username + " left the chat.\"}");
+            roomList.remove(userId); // Correctly remove the user from the roomList using userId
+            for (Session peer : session.getOpenSessions()) {
+                if (roomList.get(peer.getId()).equals(roomId)) { // Ensure message is sent only to peers in the same room
+                    peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" (Server): " + username + " left the chat.\"}");
+                }
             }
         }
     }
 
     @OnMessage
-    public void handleMessage(String comm, Session session) throws IOException, EncodeException {
-//        example getting unique userID that sent this message
+    public void handleMessage(String message, Session session) throws IOException {
         String userId = session.getId();
         String roomID = roomList.get(userId);
-        JSONObject jsonmsg = new JSONObject(comm);
-        String type = (String) jsonmsg.get("type");
-        String message = (String) jsonmsg.get("message");
+        JSONObject jsonMsg = new JSONObject(message);
+        String type = jsonMsg.getString("type");
 
-        if (usernames.containsKey(userId)){
-            String username = usernames.get(userId);
-            System.out.println(username);
-            for (Session peer: session.getOpenSessions()){
-                if(roomList.get(peer.getId()).equals(roomID)) {
-                    peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\"(" + username + "): " + message + "\"}");
+        if ("name".equals(type)) {
+            String name = jsonMsg.getString("message");
+            usernames.put(userId, name);
+            for (Session peer : session.getOpenSessions()) {
+                if (roomList.get(peer.getId()).equals(roomID)) {
+                    peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" (Server): " + name + " joined the chat room.\"}");
+                }
+            }
+        } else if ("chat".equals(type)) {
+            String chatMessage = jsonMsg.getString("message");
+            String username = usernames.getOrDefault(userId, "Anon");
+            for (Session peer : session.getOpenSessions()) {
+                if (roomList.get(peer.getId()).equals(roomID)) {
+                    peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\"(" + username + "): " + chatMessage + "\"}");
                 }
             }
         }
-        else {
-            usernames.put(userId, message);
-            for (Session peer: session.getOpenSessions()){
-                if (!peer.getId().equals(userId)){
-                    peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" (Server): " + message + " joined the chat room.\"}");
-                }
-                else {
-                    peer.getBasicRemote().sendText("{\"type\": \"chat\", \"message\":\" (Server): Welcome, " + message + "\"}");
-                }
-            }
-        }
-
-//        Example conversion of json messages from the client
-        //        JSONObject jsonmsg = new JSONObject(comm);
-//        String val1 = (String) jsonmsg.get("attribute1");
-//        String val2 = (String) jsonmsg.get("attribute2");
-
-        // handle the messages
-
-
     }
-
-
 }
