@@ -1,29 +1,42 @@
 /* styles.css */
 
-body, h1, h2, button {
+body, h1, h2, button, input {
     margin: 0;
     padding: 0;
-    font-family: 'Arial', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 #app {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: #f4f7f6;
-    color: #333;
+    background: #e9eff1;
+    color: #4a4a4a;
 }
 
 #app-header {
-    background: #333;
+    background: #39424e;
     color: #fff;
     padding: 20px 40px;
     text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 #app-header h1 {
     margin: 0;
     font-size: 2rem;
+}
+
+#app-header a {
+    color: #d1d1d1;
+    text-decoration: none;
+    font-size: 1rem;
+    float: right;
+    margin-top: 10px;
+}
+
+#app-header a:hover {
+    color: #ffffff;
 }
 
 #app-main {
@@ -36,6 +49,7 @@ body, h1, h2, button {
     background: #fff;
     padding: 20px;
     border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
 
 #sidebar h2 {
@@ -50,30 +64,32 @@ body, h1, h2, button {
     margin-bottom: 20px;
 }
 
-#room-list li {
+#room-list div {
     padding: 10px;
     border-bottom: 1px solid #ddd;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-#room-list li:hover {
-    background-color: #f9f9f9;
+#room-list div:hover {
+    background-color: #f5f5f5;
 }
 
 #create-room {
     display: block;
     width: 100%;
     padding: 10px;
-    background: #5cb85c;
+    background: #59b6d7;
     color: white;
     text-align: center;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 #create-room:hover {
-    background-color: #4cae4c;
+    background-color: #49a5c4;
 }
 
 #chat-section {
@@ -83,8 +99,9 @@ body, h1, h2, button {
 }
 
 #chat-header {
-    background: #eee;
+    background: #f7f7f7;
     padding: 20px;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
 }
 
 #chat-header h2 {
@@ -97,32 +114,89 @@ body, h1, h2, button {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
+    background: #ffffff;
 }
 
 #chat-input-container {
     display: flex;
     padding: 20px;
-    background: #fff;
+    background: #f7f7f7;
     border-top: 1px solid #ddd;
 }
 
 #chat-input {
     flex: 1;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid #dcdcdc;
     margin-right: 10px;
     border-radius: 4px;
+    font-size: 1rem;
 }
 
 #send-message {
     padding: 10px 20px;
-    background: #337ab7;
+    background: #5cb85c;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 #send-message:hover {
-    background-color: #286090;
+    background-color: #4cae4c;
+}
+
+/* About Page Styles */
+#about {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+#about header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#about header h1 {
+    font-size: 2.2rem;
+    color: #333;
+}
+
+#about main {
+    padding: 0 20px;
+}
+
+#about main p {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+#about main ul {
+    padding-left: 20px;
+}
+
+#about main li {
+    margin-bottom: 5px;
+}
+
+#about main a {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 15px;
+    background-color: #5cb85c;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+#about main a:hover {
+    background-color: #4cae4c;
 }

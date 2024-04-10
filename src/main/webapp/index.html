@@ -11,13 +11,17 @@
 <div id="app">
     <header id="app-header">
         <h1>Chat Server</h1>
+        <!-- Link to about.html -->
+        <nav>
+            <a href="about.html">About</a>
+        </nav>
     </header>
     <main id="app-main">
         <aside id="sidebar">
             <h2>List of chat Rooms</h2>
-            <ul id="room-list">
+            <div id="room-list">
                 <!-- Room list goes here -->
-            </ul>
+            </div>
             <button id="create-room" onclick="newRoom()">Create And Join New Room</button>
         </aside>
         <section id="chat-section">
@@ -28,7 +32,7 @@
                 <!-- Chat messages go here -->
             </div>
             <footer id="chat-input-container">
-                <label for="chat-input"></label><input type="text" id="chat-input" placeholder="Enter your message...">
+                <input type="text" id="chat-input" placeholder="Enter your message...">
                 <button id="send-message">Send</button>
             </footer>
         </section>
