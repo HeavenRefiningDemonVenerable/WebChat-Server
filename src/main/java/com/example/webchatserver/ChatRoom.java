@@ -1,20 +1,16 @@
 package com.example.webchatserver;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatRoom {
-    private String code;
-    private Map<String, UserDetail> users = new HashMap<>();
+    private final String code;
+    private final Map<String, UserDetail> users = new ConcurrentHashMap<>();
 
-    public ChatRoom(String code, String userSessionId){
+    public ChatRoom(String code, String userSessionId) {
         this.code = code;
-        addUser(userSessionId, ""); // Initialize with an empty username, indicating they've not set it yet
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+        addUser(userSessionId, ""); // Initialize with an empty username
     }
 
     public String getCode() {
@@ -22,38 +18,54 @@ public class ChatRoom {
     }
 
     public Map<String, String> getUsernames() {
-        Map<String, String> usernames = new HashMap<>();
-        users.forEach((sessionId, userDetails) -> usernames.put(sessionId, userDetails.username));
+        Map<String, String> usernames = new ConcurrentHashMap<>();
+        users.forEach((sessionId, userDetails) -> usernames.put(sessionId, userDetails.getUsername()));
         return usernames;
     }
 
     public void setUserName(String userID, String name) {
-        if(users.containsKey(userID)) {
-            users.get(userID).username = name;
-        } else {
-            addUser(userID, name);
-        }
+        users.computeIfPresent(userID, (id, userDetails) -> {
+            userDetails.setUsername(name);
+            return userDetails;
+        });
     }
 
-    public void removeUser(String userID){
+    public void removeUser(String userID) {
         users.remove(userID);
     }
 
-    public boolean inRoom(String userID){
+    public boolean inRoom(String userID) {
         return users.containsKey(userID);
     }
 
     private void addUser(String sessionId, String username) {
-        users.put(sessionId, new UserDetail(username, Instant.now()));
+        users.put(sessionId, new UserDetail(username));
     }
 
     private static class UserDetail {
-        String username;
-        Instant lastActive;
+        private String username;
+        private Instant lastActive;
 
-        UserDetail(String username, Instant lastActive) {
+        UserDetail(String username) {
+            setUsername(username);
+            updateLastActive();
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
             this.username = username;
-            this.lastActive = lastActive;
+            updateLastActive();
+        }
+
+        public Instant getLastActive() {
+            return lastActive;
+        }
+
+        public void updateLastActive() {
+            this.lastActive = Instant.now();
         }
     }
 }

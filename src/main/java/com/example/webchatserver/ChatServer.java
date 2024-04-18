@@ -14,14 +14,12 @@ import java.util.TimeZone;
 
 @ServerEndpoint(value="/ws/{roomID}")
 public class ChatServer {
-
-    private static Map<String, String> usernames = new ConcurrentHashMap<>();
-    private static Map<String, Session> sessions = new ConcurrentHashMap<>();
-    private static Map<String, Set<Session>> roomSessions = new ConcurrentHashMap<>();
+    private static final Map<String, String> usernames = new ConcurrentHashMap<>();
+    private static final Map<String, Session> sessions = new ConcurrentHashMap<>();
+    private static final Map<String, Set<Session>> roomSessions = new ConcurrentHashMap<>();
 
     @OnOpen
     public void open(@PathParam("roomID") String roomID, Session session) {
-        // Associate session with a username and a room
         sessions.put(session.getId(), session);
         roomSessions.computeIfAbsent(roomID, k -> ConcurrentHashMap.newKeySet()).add(session);
         broadcastRoomList();
@@ -31,15 +29,7 @@ public class ChatServer {
     @OnClose
     public void close(Session session) {
         String userId = session.getId();
-        // Find which room the session is part of and remove it
-        roomSessions.forEach((roomID, sessionSet) -> {
-            if (sessionSet.remove(session)) {
-                // When a user leaves, broadcast it to others in the room
-                String username = usernames.getOrDefault(userId, "Anonymous");
-                String message = String.format("{\"type\": \"chat\", \"user\": \"Server\", \"message\": \"%s has left the chat.\", \"timestamp\": \"%s\"}", username, getCurrentTimestamp());
-                broadcastMessageToRoom(message, roomID);
-            }
-        });
+        roomSessions.values().forEach(sessionSet -> sessionSet.remove(session));
         usernames.remove(userId);
         sessions.remove(userId);
         broadcastRoomList();
@@ -47,58 +37,65 @@ public class ChatServer {
 
     @OnMessage
     public void handleMessage(String message, Session session, @PathParam("roomID") String roomID) {
-        String userId = session.getId();
         JSONObject jsonMsg = new JSONObject(message);
-        String type = jsonMsg.getString("type");
+        String userId = session.getId();
+        processMessage(userId, jsonMsg, roomID);
+    }
 
-        if ("join".equals(type)) {
-            String username = jsonMsg.getString("username");
-            usernames.put(userId, username); // Save the username associated with user's session ID
-            String joinMsg = String.format("{\"type\": \"chat\", \"username\": \"Server\", \"message\": \"%s has joined the chat.\", \"timestamp\": \"%s\"}", username, getCurrentTimestamp());
-            broadcastMessageToRoom(joinMsg, roomID);
-        } else if ("chat".equals(type)) {
-            String chatMessage = jsonMsg.getString("message");
-            // Retrieve username using the session ID, and use "Anonymous" if not found
-            String username = usernames.getOrDefault(userId, "Anonymous");
-            if (username == null || username.trim().isEmpty()) {
-                username = "Anonymous"; // Fallback in case the username is somehow not set
-            }
-            String chatMsg = String.format("{\"type\": \"chat\", \"username\": \"%s\", \"message\": \"%s\", \"timestamp\": \"%s\"}", username, chatMessage, getCurrentTimestamp());
-            broadcastMessageToRoom(chatMsg, roomID);
+    private void processMessage(String userId, JSONObject jsonMsg, String roomID) {
+        String type = jsonMsg.optString("type");
+        switch (type) {
+            case "join":
+                handleJoin(userId, jsonMsg, roomID);
+                break;
+            case "chat":
+                handleChat(userId, jsonMsg, roomID);
+                break;
+            default:
+                System.err.println("Unsupported message type: " + type);
         }
     }
 
+    private void handleJoin(String userId, JSONObject jsonMsg, String roomID) {
+        String username = jsonMsg.getString("username");
+        usernames.put(userId, username);
+        broadcastMessageToRoom(String.format("{\"type\": \"chat\", \"username\": \"Server\", \"message\": \"%s has joined the chat.\", \"timestamp\": \"%s\"}", username, getCurrentTimestamp()), roomID);
+    }
 
-
+    private void handleChat(String userId, JSONObject jsonMsg, String roomID) {
+        String username = usernames.getOrDefault(userId, "Anonymous");
+        String message = jsonMsg.getString("message");
+        broadcastMessageToRoom(String.format("{\"type\": \"chat\", \"username\": \"%s\", \"message\": \"%s\", \"timestamp\": \"%s\"}", username, message, getCurrentTimestamp()), roomID);
+    }
 
     private void broadcastRoomList() {
-        Set<String> roomIds = roomSessions.keySet();
-        String roomListMessage = new JSONObject()
-                .put("type", "roomList")
-                .put("rooms", new JSONArray(roomIds))
-                .toString();
+        JSONArray roomIds = new JSONArray(roomSessions.keySet());
+        String roomListMessage = new JSONObject().put("type", "roomList").put("rooms", roomIds).toString();
+        broadcastMessage(roomListMessage);
+    }
+
+    private void broadcastMessage(String message) {
         sessions.values().forEach(session -> {
-            try {
-                if (session.isOpen()) {
-                    session.getBasicRemote().sendText(roomListMessage);
+            if (session.isOpen()) {
+                try {
+                    session.getBasicRemote().sendText(message);
+                } catch (IOException e) {
+                    System.err.println("Failed to send message: " + e.getMessage());
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         });
     }
 
     private void broadcastMessageToRoom(String message, String roomID) {
-        roomSessions.getOrDefault(roomID, Collections.emptySet())
-                .forEach(session -> {
-                    try {
-                        if (session.isOpen()) {
-                            session.getBasicRemote().sendText(message);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
+        roomSessions.getOrDefault(roomID, Collections.emptySet()).forEach(session -> {
+            if (session.isOpen()) {
+                try {
+                    session.getBasicRemote().sendText(message);
+                } catch (IOException e) {
+                    System.err.println("Failed to send message to room: " + e.getMessage());
+                }
+            }
+        });
     }
 
     private String getCurrentTimestamp() {
